@@ -1,0 +1,62 @@
+pipeline {
+    agent {
+        kubernetes {
+            label "jenkins-slave"
+            yaml """
+            apiVersion: v1
+            kind: Pod
+            metadata:
+              name: jenkins-agent
+              containers:
+              - name: centos7
+                image: harbor-1.zhenaioa.com/yw/centos7-jdk:1.8
+                imagePullPolicy: IfNotPresent
+                volumeMounts:
+                  - name: nfs-data-apk
+                    mountPath: /data/apk
+                  - name: nfs-home-root
+                    mountPath: /root
+                  - name: nfs-env-andriod
+                    mountPath: /usr/local/android-sdk-linux
+              restartPolicy: Never
+              imagePullSecrets:
+                - name: harbor-auth-yw
+              volumes:
+                - name: nfs-data-apk
+                  nfs:
+                    path: /data/apk
+                    server: 10.41.1.62
+                - name: nfs-home-root
+                  nfs:
+                    path: /home/root
+                    server: 10.41.1.62
+                - name: nfs-env-andriod
+                  nfs:
+                    path: /env/android-sdk-linux
+                    server: 10.41.1.62
+            """
+        }
+    }
+    options {
+        buildDiscarder(
+            logRotator(numToKeepStr: '5')
+        )
+        preserveStashes(
+            buildCount: 5
+        )
+        timeout(time: 60,unit: 'MINUTES')
+        retry(1)
+    }
+    stages {
+        stage('get-code') {
+           steps {
+               sh 'sleep 1000'
+            }
+        }
+        stage('build') {
+            steps {
+                echo 'build'
+            }
+        }
+    }
+}
